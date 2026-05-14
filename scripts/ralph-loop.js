@@ -7,16 +7,15 @@
  *
  * What this loop does:
  *   For each of three coaching styles (motivational, analytical, chill),
- *   ask Claude to write a fallback template the app can show when the live
+ *   ask the model to write a fallback template the app can show when the live
  *   /api/coach endpoint is unreachable. Templates are written to coach-templates/.
  *
- * Usage:
- *   ANTHROPIC_API_KEY=sk-ant-... node scripts/ralph-loop.js
+ * Uses Groq (Llama 3.3 70B) via its OpenAI-compatible API.
  *
- * Or set the key in .env and run:  npm run ralph
+ * Usage:
+ *   GROQ_API_KEY=gsk_... node scripts/ralph-loop.js
  */
 
-import Anthropic from "@anthropic-ai/sdk";
 import fs from "node:fs/promises";
 import path from "node:path";
 
@@ -74,27 +73,41 @@ Write a 4-sentence response:
 
 No emojis. No greetings. No headers. No markdown. Plain text only.`;
 
-async function generateTemplate(anthropic, style) {
+async function generateTemplate(apiKey, style) {
   const system = `${BASE_SYSTEM}\n\nStyle: ${style.instruction}`;
-  const response = await anthropic.messages.create({
-    model: "claude-haiku-4-5-20251001",
-    max_tokens: 400,
-    system,
-    messages: [{ role: "user", content: JSON.stringify(SAMPLE_SNAPSHOT) }]
+
+  const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${apiKey}`,
+    },
+    body: JSON.stringify({
+      model: "llama-3.3-70b-versatile",
+      max_tokens: 400,
+      temperature: 0.7,
+      messages: [
+        { role: "system", content: system },
+        { role: "user", content: JSON.stringify(SAMPLE_SNAPSHOT) },
+      ],
+    }),
   });
-  const block = response.content.find((b) => b.type === "text");
-  return block ? block.text.trim() : "";
+
+  if (!response.ok) {
+    throw new Error(`groq api ${response.status}: ${await response.text()}`);
+  }
+  const data = await response.json();
+  return data.choices?.[0]?.message?.content?.trim() ?? "";
 }
 
 async function main() {
-  const apiKey = process.env.ANTHROPIC_API_KEY;
+  const apiKey = process.env.GROQ_API_KEY;
   if (!apiKey) {
-    console.error("Missing ANTHROPIC_API_KEY in environment.");
-    console.error("Set it in .env or pass it inline: ANTHROPIC_API_KEY=sk-... node scripts/ralph-loop.js");
+    console.error("Missing GROQ_API_KEY in environment.");
+    console.error("Set it in .env or pass it inline: GROQ_API_KEY=gsk_... node scripts/ralph-loop.js");
     process.exit(1);
   }
 
-  const anthropic = new Anthropic({ apiKey });
   const outDir = path.join(process.cwd(), "coach-templates");
   await fs.mkdir(outDir, { recursive: true });
 
@@ -107,7 +120,7 @@ async function main() {
   for (const style of STYLES) {
     try {
       console.log(`  → generating ${style.name} template`);
-      const text = await generateTemplate(anthropic, style);
+      const text = await generateTemplate(apiKey, style);
       if (!text) throw new Error("empty response");
 
       const out = {

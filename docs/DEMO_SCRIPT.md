@@ -90,7 +90,7 @@ Click Generate again. Show a different response.
 
 Switch to a single architecture slide (or `ARCHITECTURE.md` open in VS Code).
 
-> "Three pieces. Static frontend on Vercel. One serverless function that calls Anthropic's API. localStorage for all wellness data — nothing leaves my browser except the snapshot I explicitly send to the coach."
+> "Three pieces. Static frontend on Vercel. One serverless function that calls Groq's Llama 3.3 70B API. localStorage for all wellness data — nothing leaves my browser except the snapshot I explicitly send to the coach."
 
 > "The frontend is vanilla JavaScript. No framework, no build step. Fifteen modules in one file, totally readable. The graders can just open `app.js` and read it top to bottom."
 
@@ -104,11 +104,11 @@ git log --oneline
 
 Switch to VS Code with `api/coach.js` open.
 
-> "The serverless function is 50 lines. It takes a JSON snapshot, calls Claude Haiku 4.5, returns the text. The API key lives in Vercel's environment, never in the browser."
+> "The serverless function is 50 lines. It takes a JSON snapshot, calls Llama 3.3 70B via Groq's OpenAI-compatible API, returns the text. The API key lives in Vercel's environment, never in the browser. I picked Groq because their free tier covered the project without a credit card."
 
 Switch to `scripts/ralph-loop.js`.
 
-> "I also used the Ralph Wiggum technique — a small autonomous loop. This script generates three coaching templates in different tones."
+> "I also used the Ralph Wiggum technique — a small autonomous loop. This script generates three coaching templates in different tones using the same Groq endpoint."
 
 Run it live:
 ```
@@ -138,7 +138,7 @@ Three honest takeaways:
 Expected questions:
 
 **Q: What did this cost to run?**
-A: Claude Haiku 4.5 is around $0.005 per call. I made maybe 50 calls developing it. Less than $1 total.
+A: Zero. I used Groq's free tier for Llama 3.3 70B inference, and Vercel's free tier for the static site + serverless function. The whole project ran on $0 of infrastructure.
 
 **Q: Why no auth?**
 A: It's a personal app. Adding accounts would have meant a database, which would have meant either Supabase or a backend. localStorage is more private and simpler. Multi-device sync is the obvious v2.
@@ -146,8 +146,8 @@ A: It's a personal app. Adding accounts would have meant a database, which would
 **Q: What's the failure mode if Claude returns garbage?**
 A: I trust the response — no validation. If Claude returns nonsense, the user sees nonsense for that one call. The next click tries again. That's the Ralph spirit.
 
-**Q: Could you swap out Claude for another model?**
-A: Yes. The only Anthropic-specific code is in `api/coach.js` — about 15 lines. Swap the SDK and the model name, done.
+**Q: Could you swap out the model?**
+A: Yes. The only provider-specific code is in `api/coach.js` — about 15 lines. The Groq API is OpenAI-compatible, so swapping in OpenAI, Anthropic, or any other provider is a 3-line change: new base URL, new auth header, new model name.
 
 **Q: What would you change?**
 A: Two things. (1) Add a user-controllable system prompt — let the user pick the coach's tone. (2) Cache the last response per snapshot so repeated clicks don't re-hit the API.

@@ -10,9 +10,6 @@
     "ralph": "node scripts/ralph-loop.js",
     "serve": "npx serve ."
   },
-  "dependencies": {
-    "@anthropic-ai/sdk": "^0.32.0"
-  },
   "engines": {
     "node": ">=20"
   }

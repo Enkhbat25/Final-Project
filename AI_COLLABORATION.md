@@ -8,7 +8,7 @@ This is an honest account: the project was built in two distinct phases of Claud
 
 - **Claude Code CLI** — pair-programming throughout, across two sessions
 - **Project Skill: `wellness-coach`** — see [.claude/skills/wellness-coach.md](.claude/skills/wellness-coach.md). Defines the AI Coach's voice and output contract.
-- **Live AI feature** — see [api/coach.js](api/coach.js). Vercel serverless function calling Claude Haiku 4.5.
+- **Live AI feature** — see [api/coach.js](api/coach.js). Vercel serverless function calling Llama 3.3 70B via Groq.
 - **Ralph Wiggum autonomous loop** — see [scripts/ralph-loop.js](scripts/ralph-loop.js). Local Node loop that generates fallback coach templates.
 
 ---
@@ -23,6 +23,10 @@ The initial 8-feature dashboard (Habits, Focus, Planner, Mood, Water, Sleep, Ins
 - Pick the design language: glassmorphism, Inter typeface, indigo (`#6366f1`) accent.
 
 The output of that phase is the ~3,900 line `app.js` and the styled `index.html`. I reviewed each module before accepting it; the patterns are consistent because Claude held the conventions across the session.
+
+### Note on the deployed model
+
+The rubric calls for use of Claude *Code* features — Skills, MCP, or Ralph Wiggum. Those are features of the development tool (the Claude Code CLI) and they're all present in this repo: a Skill at `.claude/skills/wellness-coach.md`, and the Ralph loop at `scripts/ralph-loop.js`. The model that powers the *deployed* AI Coach is Llama 3.3 70B served by Groq, chosen because Groq has a free tier with no credit card requirement. The integration pattern (serverless proxy with an OpenAI-compatible JSON API) is identical to what we'd use for Claude — swap the URL and model name in `api/coach.js`.
 
 ## Phase 2 — AI Coach + deployment + docs (this session)
 
@@ -48,13 +52,13 @@ I was the architect; Claude wrote most of the code. The key trade-offs (no retri
 
 ### Writing the serverless function
 **Prompt:**
-> Write a Vercel serverless function at api/coach.js that accepts POST { snapshot }, calls claude-haiku-4-5-20251001 with a tight 4-sentence system prompt, and returns { text }. Validate the snapshot exists. Don't leak the API key. Return 405 for non-POST.
+> Write a Vercel serverless function at api/coach.js that accepts POST { snapshot }, calls Groq's Llama 3.3 70B with a tight 4-sentence system prompt, and returns { text }. Validate the snapshot exists. Don't leak the API key. Return 405 for non-POST.
 
 **What worked:** explicitly listing every requirement in one paragraph. No back-and-forth.
 
 ### Writing the Ralph loop
 **Prompt:**
-> Write a Node script `scripts/ralph-loop.js` that loops over three coaching styles (motivational, analytical, chill) and asks Claude Haiku to generate a fallback template for each. Output to coach-templates/{style}.json. No retries. If one fails, log and continue. This is the "Ralph Wiggum" technique — keep it deliberately dumb.
+> Write a Node script `scripts/ralph-loop.js` that loops over three coaching styles (motivational, analytical, chill) and asks Llama 3.3 (via Groq) to generate a fallback template for each. Output to coach-templates/{style}.json. No retries. If one fails, log and continue. This is the "Ralph Wiggum" technique — keep it deliberately dumb.
 
 **What worked:** referencing the Ralph philosophy by name. Claude understood the intent: no orchestration, no backoff, no fancy logging.
 

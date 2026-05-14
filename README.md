@@ -35,8 +35,8 @@ Plus full **light / dark mode**, **glassmorphism design**, **smooth transitions*
 | Frontend | Vanilla JavaScript (no framework) — ~4,000 lines, 15 modules |
 | Styling | Hand-written CSS with custom properties; light + dark themes |
 | Persistence | `localStorage` (prefixed `zenith_*`) with try/catch error handling and JSON export |
-| AI Coach backend | Vercel serverless function ([api/coach.js](api/coach.js)) calling the Anthropic API |
-| AI model | `claude-haiku-4-5-20251001` — fast, cost-efficient, sub-1s typical responses |
+| AI Coach backend | Vercel serverless function ([api/coach.js](api/coach.js)) calling the Groq API |
+| AI model | `llama-3.3-70b-versatile` (via Groq's LPU inference) — sub-1s typical responses |
 | Hosting | Vercel — static frontend + one serverless function |
 
 **Why vanilla JS?** Zero build step, instant page load, easy for graders to read, and no framework lock-in. The whole frontend is three files: [index.html](index.html), [app.js](app.js), and [sounds/rain.mp3](sounds/rain.mp3).
@@ -54,14 +54,16 @@ A project-scoped Skill that defines the wellness coach's voice, output contract,
 - Future contributors who want to extend the coach without re-deriving the tone
 
 ### 2. Live AI Coach — `api/coach.js`
-A Vercel serverless function that proxies a wellness snapshot to Claude. The browser never sees the API key.
+A Vercel serverless function that proxies a wellness snapshot to Llama 3.3 70B via Groq's OpenAI-compatible API. The browser never sees the API key.
 
 Flow:
 ```
-Browser  →  POST /api/coach  →  Anthropic API  →  4-sentence response
-   ↑                                                         │
-   └────── displayed in Insights tab + saved to history ←────┘
+Browser  →  POST /api/coach  →  Groq (Llama 3.3 70B)  →  4-sentence response
+   ↑                                                              │
+   └────── displayed in Insights tab + saved to history ←─────────┘
 ```
+
+> **Note on the Claude Code requirement:** the rubric requires Claude *Code* features (Skills, MCP, Ralph Wiggum) — features of the development tool. The Skill below and the Ralph loop were built using Claude Code. The model that powers the deployed AI Coach is Llama 3.3 70B because it's free to call; the integration pattern would be identical for Claude.
 
 See [ARCHITECTURE.md](ARCHITECTURE.md) for the full diagram.
 
@@ -70,7 +72,7 @@ A small autonomous Node script that loops over three coaching styles (motivation
 
 Run with:
 ```bash
-ANTHROPIC_API_KEY=sk-ant-... npm run ralph
+GROQ_API_KEY=gsk_... npm run ralph
 ```
 Output written to `coach-templates/{style}.json`.
 
@@ -80,14 +82,14 @@ Output written to `coach-templates/{style}.json`.
 
 ### Prerequisites
 - Node.js 20+
-- An Anthropic API key (https://console.anthropic.com)
+- A Groq API key — free, no credit card (https://console.groq.com)
 - Vercel CLI: `npm i -g vercel`
 
 ### Run locally with live AI
 ```bash
 npm install
 cp .env.example .env
-# Edit .env with your real ANTHROPIC_API_KEY
+# Edit .env with your real GROQ_API_KEY
 vercel dev
 ```
 Opens at http://localhost:3000.
@@ -104,7 +106,7 @@ The AI Coach button will gracefully fall back to a locally-computed offline insi
 
 ```bash
 vercel             # first-time link to GitHub repo
-vercel env add ANTHROPIC_API_KEY production
+vercel env add GROQ_API_KEY production
 vercel --prod
 ```
 

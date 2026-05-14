@@ -22,13 +22,13 @@ Zenith is a static single-page application with one serverless function for AI c
         ┌───────────────────────────────────────┐
         │   Vercel serverless function          │
         │     api/coach.js                      │
-        │   (forwards snapshot to Anthropic)    │
+        │   (forwards snapshot to Groq)         │
         └─────────────────────┬─────────────────┘
                               │
                               ▼
         ┌───────────────────────────────────────┐
-        │     Anthropic API                     │
-        │  claude-haiku-4-5-20251001            │
+        │     Groq API (OpenAI-compatible)      │
+        │     llama-3.3-70b-versatile           │
         └───────────────────────────────────────┘
 ```
 
@@ -90,11 +90,13 @@ There is no migration system. Schema changes ship with an upgrade function in `S
 2. `AICoach.buildSnapshot()` reads habits, mood, sleep, focus, and water from localStorage, windowed to the last 7 days.
 3. `AICoach.hasEnoughData()` gates the call — at least 3 data points across all categories. Below that, the user gets a friendly "log more" message instead.
 4. Browser POSTs `{ snapshot }` to `/api/coach`.
-5. The serverless function (`api/coach.js`) reads `ANTHROPIC_API_KEY` from Vercel env, calls `claude-haiku-4-5-20251001` with the wellness-coach system prompt + the snapshot, returns the response.
+5. The serverless function (`api/coach.js`) reads `GROQ_API_KEY` from Vercel env, calls Groq's OpenAI-compatible chat-completions endpoint with the wellness-coach system prompt + the snapshot, returns the response.
 6. Browser renders the response, awards 15 XP, and prepends it to `zenith_coach_history` (capped at 5 entries).
 7. On failure, `AICoach.localFallback()` computes a deterministic local insight from the same snapshot — the feature degrades gracefully.
 
-The Anthropic API key never reaches the browser. The serverless function is stateless (no logs, no DB).
+The API key never reaches the browser. The serverless function is stateless (no logs, no DB).
+
+**Why Groq + Llama instead of Claude?** Groq's free tier requires no credit card and serves Llama 3.3 70B at sub-second latency on their custom LPU hardware. The integration pattern (serverless proxy + OpenAI-compatible JSON) is identical to what we'd use for Claude or any other provider — swap the URL and model name in one place. The Claude Code features (Skill, Ralph Wiggum loop) describe how the project was *built*, not which model the deployed app calls.
 
 ---
 
@@ -106,7 +108,7 @@ The Anthropic API key never reaches the browser. The serverless function is stat
 
 **Vercel over GitHub Pages.** GitHub Pages can't host the serverless function for the AI Coach. Vercel handles both static + functions in one deploy. Free tier covers the project budget by ~100x.
 
-**Claude Haiku over Sonnet/Opus.** Haiku is ~5x faster and ~12x cheaper. The Coach task is short and well-specified; we don't need a frontier model.
+**Llama 3.3 70B via Groq over a paid model.** Groq's free tier covers this project entirely. Llama 3.3 70B is strong enough for short, well-specified coaching tasks — we don't need a frontier model. Swapping in Claude or GPT later is a 5-line change.
 
 **No retries on the Ralph loop or in `/api/coach`.** The "Ralph Wiggum" philosophy: keep loops dumb. If one call fails, the next user click tries again. No exponential backoff, no circuit breaker, no observability layer — the entire feature is ~100 lines.
 
