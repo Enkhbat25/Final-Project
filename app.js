@@ -418,7 +418,7 @@ const PageRenderer = {
             case 'mood': Mood.init(); break;
             case 'water': Water.init(); break;
             case 'sleep': Sleep.init(); break;
-            case 'insights': Insights.init(); break;
+            case 'insights': Insights.init(); AICoach.init(); break;
             case 'badges': Badges.init(); break;
         }
     },
@@ -993,6 +993,24 @@ const PageRenderer = {
                                 <span class="card-title">💡 Personalized Insights</span>
                             </div>
                             <div id="insightsList"></div>
+                        </div>
+                    </div>
+
+                    <div class="col-12" style="margin-top: 20px;">
+                        <div class="card" id="aiCoachCard">
+                            <div class="card-header">
+                                <span class="card-title">✨ AI Wellness Coach</span>
+                                <button id="aiCoachBtn" class="btn btn-primary" style="padding: 8px 16px; font-size: 0.875rem;">
+                                    Generate Insight
+                                </button>
+                            </div>
+                            <div id="aiCoachContent" style="padding: 16px 0; color: var(--text-secondary); line-height: 1.6;">
+                                <em>Click "Generate Insight" to get a personalized coaching message powered by Claude.</em>
+                            </div>
+                            <div id="aiCoachHistory" style="margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--border); display: none;">
+                                <div style="font-size: 0.75rem; color: var(--text-tertiary); margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.5px;">Recent Insights</div>
+                                <div id="aiCoachHistoryList"></div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -3801,6 +3819,181 @@ const Insights = {
                     <div class="insight-title">${insight.title}</div>
                     <div class="insight-text">${insight.text}</div>
                 </div>
+            </div>
+        `).join('');
+    }
+};
+
+// ══════════════════════════════════════════════════════════════════════════
+// AI COACH MODULE — calls /api/coach (Claude Haiku 4.5) for personalized insights
+// ══════════════════════════════════════════════════════════════════════════
+
+const AICoach = {
+    HISTORY_KEY: 'coach_history',
+    HISTORY_LIMIT: 5,
+
+    init() {
+        const btn = document.getElementById('aiCoachBtn');
+        if (!btn) return;
+        btn.addEventListener('click', () => this.generate());
+        this.renderHistory();
+    },
+
+    buildSnapshot() {
+        const days = Utils.getLastNDays(7);
+        const habits = Storage.get('habits', []);
+        const moods = Storage.get('moods', { logs: {} });
+        const sleep = Storage.get('sleep', { logs: {} });
+        const focus = Storage.get('focus', { sessions: {} });
+        const water = Storage.get('water', { goal: 2000, logs: {} });
+
+        const habitSummary = habits.map(h => ({
+            name: h.name,
+            completedThisWeek: days.filter(d => h.completedDates?.includes(d)).length,
+            outOf: 7
+        }));
+
+        const moodSummary = days.map(d => ({
+            date: d,
+            mood: moods.logs[d]?.mood ?? null
+        })).filter(m => m.mood);
+
+        const sleepSummary = days.map(d => ({
+            date: d,
+            hours: sleep.logs[d]?.duration ?? null
+        })).filter(s => s.hours !== null);
+
+        const focusSummary = days.map(d => {
+            const sessions = (focus.sessions && focus.sessions[d]) || [];
+            const minutes = sessions.reduce((sum, s) => sum + Utils.safeNumber(s?.duration, 0), 0);
+            return { date: d, minutes };
+        }).filter(f => f.minutes > 0);
+
+        const waterSummary = days.map(d => ({
+            date: d,
+            ml: (water.logs[d] || []).reduce((sum, l) => sum + Utils.safeNumber(l?.amount, 0), 0)
+        })).filter(w => w.ml > 0);
+
+        return {
+            range: '7 days',
+            habits: habitSummary,
+            moods: moodSummary,
+            sleep: sleepSummary,
+            focus: focusSummary,
+            water: waterSummary,
+            waterGoalMl: water.goal
+        };
+    },
+
+    hasEnoughData(snapshot) {
+        const totalSignals =
+            snapshot.habits.reduce((sum, h) => sum + h.completedThisWeek, 0) +
+            snapshot.moods.length +
+            snapshot.sleep.length +
+            snapshot.focus.length +
+            snapshot.water.length;
+        return totalSignals >= 3;
+    },
+
+    async generate() {
+        const btn = document.getElementById('aiCoachBtn');
+        const content = document.getElementById('aiCoachContent');
+        if (!btn || !content) return;
+
+        const snapshot = this.buildSnapshot();
+
+        if (!this.hasEnoughData(snapshot)) {
+            content.innerHTML = '<em>Log at least 3 days of habits, moods, or activity first — the coach needs data to be specific.</em>';
+            Toast.show('Track a few more days to unlock the coach', 'info');
+            return;
+        }
+
+        const originalLabel = btn.textContent;
+        btn.disabled = true;
+        btn.textContent = 'Thinking…';
+        content.innerHTML = '<em>The coach is reviewing your week…</em>';
+
+        try {
+            const response = await fetch('/api/coach', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ snapshot })
+            });
+
+            if (!response.ok) {
+                if (response.status === 0 || response.status >= 500) {
+                    throw new Error('coach unavailable');
+                }
+                const err = await response.json().catch(() => ({}));
+                throw new Error(err.error || `request failed (${response.status})`);
+            }
+
+            const data = await response.json();
+            const text = (data.text || '').trim();
+            if (!text) throw new Error('empty response');
+
+            content.textContent = text;
+            this.saveToHistory(text);
+            this.renderHistory();
+            XPSystem.addXP(15, 'AI Coach insight');
+        } catch (err) {
+            console.error('AI Coach error:', err);
+            // Graceful fallback: if no backend, show a local message generated from the snapshot
+            const fallback = this.localFallback(snapshot);
+            content.innerHTML = `<em>${Utils.escapeHtml(fallback)}</em><br><small style="color: var(--text-tertiary);">(Offline fallback — deploy to Vercel for live AI coaching.)</small>`;
+            Toast.show('Showing offline insight — coach API not reachable', 'warning');
+        } finally {
+            btn.disabled = false;
+            btn.textContent = originalLabel;
+        }
+    },
+
+    localFallback(snapshot) {
+        const topHabit = snapshot.habits.reduce(
+            (best, h) => h.completedThisWeek > best.completedThisWeek ? h : best,
+            { name: null, completedThisWeek: 0 }
+        );
+        const avgSleep = snapshot.sleep.length
+            ? (snapshot.sleep.reduce((s, x) => s + x.hours, 0) / snapshot.sleep.length).toFixed(1)
+            : null;
+
+        const parts = [];
+        if (topHabit.name) {
+            parts.push(`Your strongest habit this week was "${topHabit.name}" at ${topHabit.completedThisWeek}/7 days.`);
+        }
+        if (avgSleep) {
+            parts.push(`Average sleep was ${avgSleep} hours.`);
+        }
+        if (snapshot.focus.length) {
+            const totalFocus = snapshot.focus.reduce((s, f) => s + f.minutes, 0);
+            parts.push(`You logged ${totalFocus} focused minutes across ${snapshot.focus.length} days.`);
+        }
+        parts.push('Pick one small focus for tomorrow — consistency compounds.');
+        return parts.join(' ');
+    },
+
+    saveToHistory(text) {
+        const history = Storage.get(this.HISTORY_KEY, []);
+        history.unshift({ text, at: new Date().toISOString() });
+        Storage.set(this.HISTORY_KEY, history.slice(0, this.HISTORY_LIMIT));
+    },
+
+    renderHistory() {
+        const history = Storage.get(this.HISTORY_KEY, []);
+        const wrap = document.getElementById('aiCoachHistory');
+        const list = document.getElementById('aiCoachHistoryList');
+        if (!wrap || !list) return;
+
+        if (history.length === 0) {
+            wrap.style.display = 'none';
+            return;
+        }
+
+        wrap.style.display = 'block';
+        list.innerHTML = history.slice(0, this.HISTORY_LIMIT).map(item => `
+            <div style="padding: 12px 0; border-bottom: 1px solid var(--border); font-size: 0.875rem; color: var(--text-secondary);">
+                <div style="font-size: 0.7rem; color: var(--text-tertiary); margin-bottom: 4px;">${Utils.formatRelativeTime ? Utils.formatRelativeTime(item.at) : new Date(item.at).toLocaleString()}</div>
+                <div>${Utils.escapeHtml(item.text)}</div>
             </div>
         `).join('');
     }
