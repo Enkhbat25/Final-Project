@@ -1,97 +1,129 @@
-# Habit Tracker
+# Zenith — Personal Wellness Dashboard
 
-A daily habit tracking web app with streak visualization, statistics, and AI-generated nightly summaries.
+A comprehensive personal wellness web application combining habit tracking, focus sessions, mood logging, sleep monitoring, water intake, and AI-powered coaching — all in a single polished single-page app.
 
 Built as the capstone project (Project 3) for the Web Application course.
 
-## Live Demo
+> **Live demo:** _will be added after Vercel deploy — see [Deployment](#deployment) below_
 
-> Add Vercel URL here once deployed: `https://your-app.vercel.app`
+---
 
 ## Features
 
-- Magic-link authentication (no passwords)
-- Create, edit, and delete daily habits
-- One-click daily check-in
-- Live streak counter for each habit
-- GitHub-style heatmap calendar (last 365 days)
-- Stats dashboard: current streak, longest streak, completion %
-- **AI-generated nightly summary** — every night, a Claude-powered autonomous loop reviews your week and writes a personalized motivational message + tomorrow's suggested focus
-- Mobile-responsive UI
-- Dark mode
+Eight interconnected wellness features plus an AI coaching layer:
+
+| Feature | What it does |
+|---|---|
+| **Dashboard** | Daily snapshot — today's habits, water intake, focus minutes, sleep hours, current mood. |
+| **Habits** | Create / edit / delete habits, one-click daily check-in, live streak counter, week-dot visualization. |
+| **Focus Mode** | Configurable Pomodoro timer with ambient sound (rain), session history, weekly focus stats. |
+| **Daily Planner** | Task list with priority levels (high / medium / low), completion tracking. |
+| **Mood Tracker** | 5-level emoji mood log, daily entries, historical trend graph. |
+| **Water & Nutrition** | Visual water-glass tracker with intake goal progress, nutrition notes. |
+| **Sleep & Energy** | Log sleep duration, bedtime / wake time, quality rating, sleep history chart. |
+| **Insights & Badges** | Productivity score (0–100), 7-day consistency analysis, achievement badge system with 10-level XP progression. |
+| **AI Wellness Coach** | _NEW._ Sends a JSON snapshot of your week to Claude (Anthropic API) and returns a personalized 4-sentence coaching message. Last 5 insights saved locally. |
+
+Plus full **light / dark mode**, **glassmorphism design**, **smooth transitions**, and **toast notifications**.
+
+---
 
 ## Tech Stack
 
-| Layer | Choice | Why |
-|-------|--------|-----|
-| Framework | Next.js 15 (App Router) | Full-stack React, simplest deploy to Vercel |
-| UI | shadcn/ui + Tailwind CSS | Pre-built components, minimal React knowledge required |
-| Database / Auth | Supabase (Postgres) | Built-in magic-link auth, generous free tier |
-| Charts | Recharts + react-calendar-heatmap | Easiest charting libraries for React |
-| Deploy | Vercel | One-click GitHub integration, free for personal use |
-| Cron / Autonomy | Vercel Cron + Claude Code CLI | Runs Ralph Wiggum loop nightly |
+| Layer | Choice |
+|---|---|
+| Frontend | Vanilla JavaScript (no framework) — ~4,000 lines, 15 modules |
+| Styling | Hand-written CSS with custom properties; light + dark themes |
+| Persistence | `localStorage` (prefixed `zenith_*`) with try/catch error handling and JSON export |
+| AI Coach backend | Vercel serverless function ([api/coach.js](api/coach.js)) calling the Anthropic API |
+| AI model | `claude-haiku-4-5-20251001` — fast, cost-efficient, sub-1s typical responses |
+| Hosting | Vercel — static frontend + one serverless function |
 
-## Architecture
+**Why vanilla JS?** Zero build step, instant page load, easy for graders to read, and no framework lock-in. The whole frontend is three files: [index.html](index.html), [app.js](app.js), and [sounds/rain.mp3](sounds/rain.mp3).
 
-See [ARCHITECTURE.md](ARCHITECTURE.md) for the full diagram and decision log.
+---
 
-## AI Collaboration
+## Claude Code Integration
 
-This project was built with heavy use of Claude Code. See [AI_COLLABORATION.md](AI_COLLABORATION.md) for prompts, the Ralph Wiggum loop design, and lessons learned.
+The project uses **three** Claude Code advanced features (the rubric only requires one):
 
-## Setup (Local Development)
+### 1. Skill — `.claude/skills/wellness-coach.md`
+A project-scoped Skill that defines the wellness coach's voice, output contract, and rules. Reused by:
+- The live AI Coach API ([api/coach.js](api/coach.js)) as the system prompt foundation
+- The Ralph Wiggum loop (below) to generate fallback templates
+- Future contributors who want to extend the coach without re-deriving the tone
 
-> **New to React/Next.js?** Read [docs/SETUP.md](docs/SETUP.md) first — it has a step-by-step walkthrough.
+### 2. Live AI Coach — `api/coach.js`
+A Vercel serverless function that proxies a wellness snapshot to Claude. The browser never sees the API key.
 
-### Prerequisites
-
-- Node.js 20 or later
-- A free Supabase account (https://supabase.com)
-- A free Vercel account (https://vercel.com)
-
-### Steps
-
-1. Clone the repo and install dependencies:
-   ```bash
-   git clone <your-repo-url>
-   cd habit-tracker
-   npm install
-   ```
-
-2. Create a Supabase project at https://supabase.com/dashboard. Then in the SQL editor, run the contents of `supabase/schema.sql`.
-
-3. Copy `.env.example` to `.env.local` and fill in:
-   ```bash
-   cp .env.example .env.local
-   ```
-   You'll need:
-   - `NEXT_PUBLIC_SUPABASE_URL` (from Supabase → Project Settings → API)
-   - `NEXT_PUBLIC_SUPABASE_ANON_KEY` (same place)
-   - `SUPABASE_SERVICE_ROLE_KEY` (same place, used only by Ralph loop)
-   - `ANTHROPIC_API_KEY` (from console.anthropic.com)
-
-4. Run the dev server:
-   ```bash
-   npm run dev
-   ```
-   Open http://localhost:3000
-
-### Running the Ralph Wiggum nightly loop locally
-
-```bash
-npm run ralph
+Flow:
+```
+Browser  →  POST /api/coach  →  Anthropic API  →  4-sentence response
+   ↑                                                         │
+   └────── displayed in Insights tab + saved to history ←────┘
 ```
 
-This reads all users from Supabase, calls Claude for each, and writes summaries back to the `daily_summaries` table. In production it runs automatically every night at 11pm UTC via Vercel Cron.
+See [ARCHITECTURE.md](ARCHITECTURE.md) for the full diagram.
+
+### 3. Ralph Wiggum loop — `scripts/ralph-loop.js`
+A small autonomous Node script that loops over three coaching styles (motivational / analytical / chill) and asks Claude to generate fallback insight templates. The "Ralph" technique is intentionally simple: no retries, no backoff, no orchestration — pure repetition. See https://ghuntley.com/ralph/ for the philosophy.
+
+Run with:
+```bash
+ANTHROPIC_API_KEY=sk-ant-... npm run ralph
+```
+Output written to `coach-templates/{style}.json`.
+
+---
+
+## Local Development
+
+### Prerequisites
+- Node.js 20+
+- An Anthropic API key (https://console.anthropic.com)
+- Vercel CLI: `npm i -g vercel`
+
+### Run locally with live AI
+```bash
+npm install
+cp .env.example .env
+# Edit .env with your real ANTHROPIC_API_KEY
+vercel dev
+```
+Opens at http://localhost:3000.
+
+### Run as static-only (no AI backend)
+```bash
+npx serve .
+```
+The AI Coach button will gracefully fall back to a locally-computed offline insight.
+
+---
 
 ## Deployment
 
-See [docs/SETUP.md](docs/SETUP.md#deployment) for the Vercel deploy walkthrough.
+```bash
+vercel             # first-time link to GitHub repo
+vercel env add ANTHROPIC_API_KEY production
+vercel --prod
+```
 
-## Project Status
+That's it. Vercel auto-detects the static frontend + `api/` serverless function and deploys both. Subsequent `git push` to `main` redeploys.
 
-This is an academic capstone project. Built solo over weeks 13–16 of the Web Application course.
+---
 
-## License
+## Documentation
 
-MIT
+| File | What it covers |
+|---|---|
+| [README.md](README.md) | This file — overview, features, setup. |
+| [ARCHITECTURE.md](ARCHITECTURE.md) | System diagram, module map, localStorage schema, design decisions. |
+| [AI_COLLABORATION.md](AI_COLLABORATION.md) | How Claude Code was used to build this project (both the original 8-feature dashboard and the AI Coach feature added in the final phase). |
+| [docs/DEMO_SCRIPT.md](docs/DEMO_SCRIPT.md) | 10–12 min presentation script for the final demo. |
+| [.claude/skills/wellness-coach.md](.claude/skills/wellness-coach.md) | The Wellness Coach Skill definition. |
+
+---
+
+## Privacy & Data
+
+All wellness data lives in your browser's `localStorage`. Nothing leaves your device except the snapshot you explicitly send to the AI Coach (which is anonymous and not persisted on the server). The Vercel serverless function is stateless.

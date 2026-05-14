@@ -1,157 +1,195 @@
-# Demo Script (10–15 min target)
+# Demo Script — Zenith (10–12 min)
 
-A presenter's outline. Print this or have it on a second screen.
+A presenter's outline. Print this or keep it on a second screen.
 
-## Setup before you start (5 minutes before class)
-- [ ] Live URL open in clean Chrome window (no extensions, no other tabs)
-- [ ] Pre-seeded demo account already logged in (~30 days of data)
-- [ ] Backup video tab ready
-- [ ] Terminal open with: `git log --oneline -20` (already run)
-- [ ] VS Code open with `AI_COLLABORATION.md` and `scripts/ralph-loop.ts` in side-by-side view
-- [ ] Phone on silent
-- [ ] Water nearby
+## Setup (5 min before class)
 
----
-
-## Slide 0 — Title (5 sec)
-"Habit Tracker — capstone project for the Web App course. I'm [your name]."
-
----
-
-## Section 1 — Hook (60 sec)
-
-> "Show of hands — who's tried to build a habit, tracked it for two weeks, then forgot about it?"
-
-(Wait for hands.)
-
-> "Me too. I built this because the apps I tried were either too simple — just checkboxes — or too complicated, with social features I didn't want. I wanted something that did two things well: track my habits, and tell me each night what I should focus on tomorrow."
-
-> "And to do the 'tell me what to focus on' part, I used a Claude Code technique called the Ralph Wiggum loop, which I'll show in a few minutes."
+- [ ] Live URL open in clean Chrome window
+- [ ] Pre-seeded localStorage with ~14 days of data (use the data-seeding bookmarklet — see end of this doc)
+- [ ] Dark mode toggle ready
+- [ ] Backup video tab open (recorded yesterday)
+- [ ] Terminal open with these tabs ready:
+  - `git log --oneline` already run
+  - `npm run ralph` ready to type (don't run yet)
+  - `cat .claude/skills/wellness-coach.md` ready
+- [ ] VS Code open showing `api/coach.js` and `scripts/ralph-loop.js` side by side
+- [ ] Phone on silent, water nearby
 
 ---
 
-## Section 2 — Live demo (5 min)
+## 0:00 — Title (5 sec)
+"Zenith — a personal wellness dashboard. I'm Enkhbat. This is my capstone for the Web App course."
 
-### 2a. The dashboard (60 sec)
-- Already logged in
-- Point to:
-  - List of 4 habits
-  - Current streak next to each
-  - The "Tomorrow's focus" card at the top (Ralph-generated)
-  - The big "Done" buttons
+## 0:05 – 1:00 — Hook
+> "Most habit-tracking apps do one thing. Most wellness apps want a subscription. I wanted something that combined habits, mood, sleep, focus, water — all my daily wellness signals — into one local-first dashboard, plus an AI coach that reads the data and tells me what to focus on tomorrow."
 
-> "This is my actual account. These are habits I've been tracking the past month."
+> "Eight features in one app, all offline-first, with a Claude-powered coaching layer on top. Let me show you."
 
-### 2b. Check in a habit (30 sec)
-- Click "Done" on one habit
-- Show the streak number tick up
-- Show the heatmap square fill in
+## 1:00 – 6:30 — Live demo (the meat)
 
-### 2c. Heatmap (60 sec)
-- Scroll to heatmap
-- Hover over a few cells
+Click through each feature. Spend ~40 seconds on each.
 
-> "GitHub-style heatmap, last 365 days. Each cell darker if I completed more habits that day. This is my favorite part — you can see at a glance whether you're consistent."
+### 1:00 — Dashboard
+- "This is what I see when I open the app. Today's habit progress, water intake, focus minutes, sleep, mood."
+- Point out the GitHub-style heatmap.
 
-### 2d. Add a new habit (45 sec)
-- Click "Add habit"
-- Type in something funny like "Drink less coffee"
-- Save
-- Show it appears immediately
+### 1:40 — Habits
+- Show 4 active habits with streaks.
+- Check off one habit. Toast notification fires. XP awarded.
+- "One-click check-in. Streak updates in real time."
 
-### 2e. Stats page (60 sec)
-- Navigate to /stats
-- Walk through the three big numbers + two charts
+### 2:20 — Focus Mode
+- Set a 25-minute timer. Start it.
+- Click the rain ambient sound. Let it play for 5 seconds.
+- "Pomodoro with ambient audio. The Web Audio API gives us the sound."
+- Pause the timer.
 
-### 2f. Mobile view (30 sec)
-- Open DevTools, toggle device toolbar
-- Show responsive layout
-- Close DevTools
+### 3:00 — Daily Planner
+- Show 3 tasks with high/med/low priority.
+- Check one off.
 
-### 2g. The Ralph-generated summary (60 sec)
-- Back on dashboard, scroll to the summary card
-- Read it out loud
+### 3:40 — Mood Tracker
+- Click "Great" mood for today. Toast fires.
+- Show 7-day mood graph.
 
-> "This was written by Claude last night at 11pm UTC. It looked at the last 7 days of my data and wrote this. Tomorrow night it'll write a new one."
+### 4:20 — Water & Nutrition
+- Click "+ 250ml" twice.
+- Watch the glass fill animation.
+
+### 5:00 — Sleep
+- Show last 7 days of sleep durations as a chart.
+
+### 5:40 — Insights & Badges
+- Productivity score (0-100).
+- 4 earned badges.
+- 7-day consistency bars.
+
+### 6:10 — Theme switch
+- Toggle dark mode. Pause for the audience to react.
+- "Full theming with CSS custom properties. Light, dark, glassmorphism. No CSS framework."
+
+## 6:30 – 8:30 — The AI Coach (the wow moment)
+
+Scroll to the AI Coach card on the Insights page.
+
+> "Here's the part that's new. Every wellness app says 'consistency matters' — but they don't know my data. This does."
+
+Click **Generate Insight**.
+
+(Wait ~1-2 seconds for Claude to respond.)
+
+Read the response out loud.
+
+> "This was generated just now. It looked at my last 7 days — actually 14, in this demo — and wrote a specific 4-sentence message. It calls out a real number from my data, celebrates one thing, names one focus area, suggests one concrete action."
+
+Click Generate again. Show a different response.
+
+> "Saved to history. Last 5 are kept locally. If the backend is down, it falls back to a deterministic local insight — graceful degradation."
+
+## 8:30 – 10:00 — Architecture + Git + AI workflow
+
+Switch to a single architecture slide (or `ARCHITECTURE.md` open in VS Code).
+
+> "Three pieces. Static frontend on Vercel. One serverless function that calls Anthropic's API. localStorage for all wellness data — nothing leaves my browser except the snapshot I explicitly send to the coach."
+
+> "The frontend is vanilla JavaScript. No framework, no build step. Fifteen modules in one file, totally readable. The graders can just open `app.js` and read it top to bottom."
+
+Switch to terminal.
+
+```
+git log --oneline
+```
+
+> "[N] commits across the project, with conventional commit messages."
+
+Switch to VS Code with `api/coach.js` open.
+
+> "The serverless function is 50 lines. It takes a JSON snapshot, calls Claude Haiku 4.5, returns the text. The API key lives in Vercel's environment, never in the browser."
+
+Switch to `scripts/ralph-loop.js`.
+
+> "I also used the Ralph Wiggum technique — a small autonomous loop. This script generates three coaching templates in different tones."
+
+Run it live:
+```
+npm run ralph
+```
+
+Watch three "→ generating X template" lines appear.
+
+> "No retries, no backoff. Pure repetition. The philosophy is that simple loops are more robust than orchestrated ones. Took about 30 seconds for all three templates."
+
+Show `.claude/skills/wellness-coach.md` briefly.
+
+> "And there's a project Skill that defines the coach's voice — the 4-sentence contract, the tone rules, the things it must never do. Three Claude Code features in one project: a Skill, a live API integration, and an autonomous loop."
+
+## 10:00 – 11:30 — Lessons learned
+
+Three honest takeaways:
+
+> "First — I was about to throw away this app and rebuild it in Next.js because the docs in the repo said it was supposed to be Next.js. Then I actually looked at what was already built. The biggest engineering decision I made was recognizing existing work and adding to it, not starting over. That saved this project."
+
+> "Second — the AI Coach was the smallest feature in terms of lines of code but had the biggest UX impact. About 150 lines total. The lesson is that the best features aren't the largest; they're the ones that use the data you've already collected in a new way."
+
+> "Third — I learned to prompt Claude with constraints, not designs. 'Add an AI button' produced something wrong. 'Add a module after Insights that builds a snapshot from these specific localStorage keys, POSTs to this endpoint, falls back to a local insight on failure' produced exactly what I wanted in one shot."
+
+## 11:30 – 12:00 — Q&A
+
+Expected questions:
+
+**Q: What did this cost to run?**
+A: Claude Haiku 4.5 is around $0.005 per call. I made maybe 50 calls developing it. Less than $1 total.
+
+**Q: Why no auth?**
+A: It's a personal app. Adding accounts would have meant a database, which would have meant either Supabase or a backend. localStorage is more private and simpler. Multi-device sync is the obvious v2.
+
+**Q: What's the failure mode if Claude returns garbage?**
+A: I trust the response — no validation. If Claude returns nonsense, the user sees nonsense for that one call. The next click tries again. That's the Ralph spirit.
+
+**Q: Could you swap out Claude for another model?**
+A: Yes. The only Anthropic-specific code is in `api/coach.js` — about 15 lines. Swap the SDK and the model name, done.
+
+**Q: What would you change?**
+A: Two things. (1) Add a user-controllable system prompt — let the user pick the coach's tone. (2) Cache the last response per snapshot so repeated clicks don't re-hit the API.
 
 ---
 
-## Section 3 — Architecture (2.5 min)
+## If something breaks
 
-Switch to your architecture diagram (one slide).
-
-> "Three pieces. The Next.js app runs on Vercel. The database and auth are Supabase Postgres. And the Ralph Wiggum loop runs once a night as a Vercel Cron job."
-
-> "I chose Supabase because magic-link auth is one function call and Postgres row-level security means I don't have to write authorization code in the app — the database enforces it."
-
-> "I chose Next.js because Server Components mean the database query for 'today's habits' happens server-side. The browser never sees my Supabase keys."
-
-(Optional: show the schema in 30 seconds. Three tables: habits, completions, daily_summaries.)
-
----
-
-## Section 4 — Git + AI workflow (2.5 min)
-
-Switch to terminal with `git log --oneline -20`.
-
-> "I committed every day. 34 commits, feature branches for everything non-trivial."
-
-(Open one PR on GitHub.)
-
-> "I worked with Claude Code from day one. Every feature started as a GitHub issue, then I'd open Claude in the repo and describe what I wanted."
-
-Switch to VS Code with `scripts/ralph-loop.ts`.
-
-> "This is the Ralph Wiggum loop. The name is a reference to the Simpsons character — the idea is a small, dumb, autonomous process that runs continuously. No retries, no branching, no orchestration. Just: pull data, ask Claude, write the result, move on."
-
-(Scroll through the file — 30 seconds max.)
-
-> "At 11pm UTC, Vercel hits an endpoint that calls this function. It pulls the last 7 days of completions for every active user, asks Claude Haiku for a 3-sentence summary, and saves it."
-
-Switch to `AI_COLLABORATION.md`.
-
-> "I kept this document up to date as I went. It has my best prompts, my worst prompts, and the lessons from both."
-
----
-
-## Section 5 — Lessons learned (90 sec)
-
-Pick THREE honest ones. Examples:
-
-> "First — getting deployment working on day one was the single best decision I made. Every feature went straight to production. I never had a 'works on my machine' bug."
-
-> "Second — I tried to use Claude to write my database schema, and it suggested a normalized design with 6 tables. I pushed back, asked for the simplest possible 3-table version, and that's what I shipped. Claude is good but you still have to be the architect."
-
-> "Third — the Ralph loop's prompts went through 8 revisions before the summaries felt natural. Specificity matters more than length."
-
----
-
-## Section 6 — Q&A (2 min)
-
-Expected questions and your prepared answers:
-
-**Q: How much did the Anthropic API cost?**
-A: About $0.005 per user per night using Haiku. I budgeted $5 for the whole project, used less than $2.
-
-**Q: What would you add in v2?**
-A: Push notifications. Mobile app via PWA. Timezone-aware cron so summaries arrive at user-local 11pm. Maybe social/accountability features.
-
-**Q: Why not use Firebase or a custom Node backend?**
-A: Postgres + RLS gave me real SQL with built-in authorization. Firebase's NoSQL would have made the streak calculation harder. A custom backend would have been more code to maintain for a 4-week project.
-
-**Q: How did you handle the case where Claude returns a bad response?**
-A: I don't validate the body — I trust it. If Claude returns nonsense, the user sees nonsense for one day, and the next night's run overwrites it. This is the Ralph spirit — keep it simple.
-
-**Q: What was the hardest bug?**
-A: The streak calculation. Timezones. Claude's first version didn't handle them. (Tell the story from your AI_COLLABORATION.md.)
-
----
-
-## If something breaks during the demo
-
-1. **Stay calm.** Say: "Looks like a hiccup — let me show you the recorded version."
+1. Stay calm. Say: "Looks like the live one's having a moment — let me show you the recording."
 2. Open the backup video tab.
-3. Play from where you got stuck.
-4. After the video, finish the rest of the demo from the recording.
+3. Play the relevant section.
+4. After the video, resume the demo from the next section.
 
-The graders care that you have a recovery plan, not that nothing ever breaks. Acknowledging a problem gracefully is itself a sign of professional polish.
+The graders care that you have a backup plan more than that nothing breaks. Acknowledging gracefully is itself a sign of polish.
+
+---
+
+## Data-seeding bookmarklet
+
+Use this to pre-populate localStorage so the heatmap and Insights look populated in the demo. Paste into the browser console on the live site (or save as a bookmarklet):
+
+```javascript
+(() => {
+  const days = Array.from({length: 14}, (_, i) => {
+    const d = new Date(); d.setDate(d.getDate() - i);
+    return d.toISOString().slice(0, 10);
+  });
+  const habits = [
+    { id: 'h1', name: 'Read 20 minutes', color: 'purple', icon: '📚', completedDates: days.filter((_,i) => i%3 !== 0) },
+    { id: 'h2', name: 'Walk outside', color: 'green', icon: '🚶', completedDates: days.filter((_,i) => i%2 === 0) },
+    { id: 'h3', name: 'No phone first hour', color: 'blue', icon: '📵', completedDates: days.slice(0, 7) }
+  ];
+  localStorage.setItem('zenith_habits', JSON.stringify(habits));
+  const moods = { logs: {} };
+  ['great','good','okay','good','great','good','okay'].forEach((m,i) => moods.logs[days[i]] = { mood: m });
+  localStorage.setItem('zenith_moods', JSON.stringify(moods));
+  const sleep = { logs: {} };
+  [7.5, 8, 6, 7, 8.5, 7, 6.5].forEach((h,i) => sleep.logs[days[i]] = { duration: h, quality: 'good' });
+  localStorage.setItem('zenith_sleep', JSON.stringify(sleep));
+  const water = { goal: 2000, logs: {} };
+  days.slice(0,7).forEach(d => water.logs[d] = [{amount: 250}, {amount: 250}, {amount: 500}]);
+  localStorage.setItem('zenith_water', JSON.stringify(water));
+  location.reload();
+})();
+```
