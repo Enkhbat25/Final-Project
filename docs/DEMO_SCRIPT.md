@@ -100,7 +100,7 @@ Switch to terminal.
 git log --oneline
 ```
 
-> "[N] commits across the project, with conventional commit messages."
+> "13 commits across the project, all with conventional commit prefixes — feat, fix, refactor, chore, docs. You can see how the project evolved: cleaning up scaffolding, adding the serverless function, then the frontend module, then the Ralph loop, then the model swap, then bug fixes."
 
 Switch to VS Code with `api/coach.js` open.
 
