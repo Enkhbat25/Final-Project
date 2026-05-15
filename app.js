@@ -1103,6 +1103,12 @@ const Dashboard = {
     },
 
     update() {
+        // Dashboard.update() touches DOM nodes that only exist when the Dashboard
+        // page is rendered. Other pages call this indirectly (e.g. completing a
+        // habit calls Dashboard.update() to refresh the snapshot). If we're not
+        // on the dashboard, skip silently.
+        if (!document.getElementById('dashHabits')) return;
+
         const today = Utils.getToday();
 
         // Habits stats
@@ -2960,15 +2966,22 @@ const Focus = {
     },
 
     render() {
+        // Focus timer keeps ticking via setInterval even when the user navigates
+        // to another page — that's intentional. But the DOM elements only exist
+        // on the Focus page, so skip the visual update when they're gone.
+        const display = document.getElementById('timerDisplay');
+        const ring = document.getElementById('timerRingFill');
+        if (!display || !ring) return;
+
         const minutes = Math.floor(this.timeLeft / 60);
         const seconds = this.timeLeft % 60;
-        document.getElementById('timerDisplay').textContent =
+        display.textContent =
             `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
 
         // Update ring
         const circumference = 2 * Math.PI * 90;
         const offset = circumference * (1 - this.timeLeft / this.totalTime);
-        document.getElementById('timerRingFill').style.strokeDashoffset = offset;
+        ring.style.strokeDashoffset = offset;
     },
 
     /**

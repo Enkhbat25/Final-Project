@@ -4,7 +4,7 @@ A comprehensive personal wellness web application combining habit tracking, focu
 
 Built as the capstone project (Project 3) for the Web Application course.
 
-> **Live demo:** _will be added after Vercel deploy — see [Deployment](#deployment) below_
+> **Live demo:** **https://habit-tracker-xi-bice.vercel.app**
 
 ---
 
