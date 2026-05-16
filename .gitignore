@@ -40,4 +40,7 @@ next-env.d.ts
 # coverage
 coverage/
 
+# local-only demo notes (not part of submission)
+docs/VIDEO_SCRIPT.md
+
 .vercel
